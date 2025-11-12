@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floyd's Cycle Detection Algorithm</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #c7d2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #312e81;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #4b5563;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .visualization-area {
+            background: #f9fafb;
+            border-radius: 10px;
+            padding: 30px;
+            min-height: 250px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .linked-list {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .node-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .node {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid #d1d5db;
+            background: white;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .node.slow {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+
+        .node.fast {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+
+        .node.both {
+            border-color: #a855f7;
+            background: #f3e8ff;
+        }
+
+        .node.cycle-start {
+            box-shadow: 0 0 0 4px #4ade80;
+        }
+
+        .pointer-label {
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+        }
+
+        .cycle-start-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: #16a34a;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .arrow {
+            color: #9ca3af;
+            font-size: 1.5rem;
+            margin: 0 10px;
+        }
+
+        .cycle-arrow {
+            color: #16a34a;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-left: 15px;
+        }
+
+        .status-box {
+            text-align: center;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .status-box.running {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-box.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-box.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        button, select {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        button:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-add {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn-remove {
+            background: #ea580c;
+            color: white;
+        }
+
+        .btn-cycle {
+            background: #9333ea;
+            color: white;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-remove-cycle {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-step {
+            background: #2563eb;
+            color: white;
+            padding: 15px 25px;
+            font-size: 1rem;
+        }
+
+        .btn-reset {
+            background: #4b5563;
+            color: white;
+            padding: 15px 25px;
+            font-size: 1rem;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+        }
+
+        .info-section h3 {
+            color: #4f46e5;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .info-section p, .info-section ul {
+            font-size: 0.9rem;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .info-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-section li {
+            margin-bottom: 8px;
+        }
+
+        .complexity-box {
+            background: #dbeafe;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .btn-code {
+            width: 100%;
+            background: #4f46e5;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .code-container {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            display: none;
+            margin-top: 15px;
+        }
+
+        .code-container.show {
+            display: block;
+        }
+
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Floyd's Cycle Detection Algorithm</h1>
+        <p class="subtitle">Tortoise 🐢 and Hare 🐇 Algorithm Visualizer</p>
+
+        <div class="grid">
+            <div class="panel">
+                <h2>Linked List Visualization</h2>
+                
+                <div class="visualization-area">
+                    <div id="linkedList" class="linked-list"></div>
+                </div>
+
+                <div id="statusBox" class="status-box">
+                    Ready to Start - Click "Step Through Algorithm"
+                </div>
+
+                <div class="controls">
+                    <button class="btn-add" onclick="addNode()">Add Node</button>
+                    <button class="btn-remove" id="removeBtn" onclick="removeNode()">Remove Node</button>
+                    <select id="cycleSelect" class="btn-cycle" onchange="createCycle(this.value)">
+                        <option value="">Create Cycle to...</option>
+                    </select>
+                    <button class="btn-remove-cycle" id="removeCycleBtn" onclick="removeCycle()">Remove Cycle</button>
+                </div>
+
+                <div class="controls">
+                    <button class="btn-step" id="stepBtn" onclick="stepAlgorithm()">Step Through Algorithm</button>
+                    <button class="btn-reset" onclick="resetAlgorithm()">Reset</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Algorithm Info</h2>
+
+                <div class="info-section">
+                    <h3>How It Works</h3>
+                    <p>Floyd's algorithm uses two pointers moving at different speeds. Slow pointer moves 1 step, fast pointer moves 2 steps at a time.</p>
+                </div>
+
+                <div class="info-section">
+                    <h3>Detection Logic</h3>
+                    <p>If no cycle exists, fast pointer reaches the end. If a cycle exists, the fast pointer catches up to the slow pointer.</p>
+                </div>
+
+                <div class="info-section complexity-box">
+                    <h3>Complexity</h3>
+                    <p><strong>Time:</strong> O(n)</p>
+                    <p><strong>Space:</strong> O(1)</p>
+                </div>
+
+                <div class="info-section">
+                    <h3>Pointer Legend</h3>
+                    <ul>
+                        <li>🐢 <strong>Blue</strong> - Slow Pointer</li>
+                        <li>🐇 <strong>Red</strong> - Fast Pointer</li>
+                        <li>🐢🐇 <strong>Purple</strong> - Both Meet</li>
+                        <li>🟢 <strong>Green Ring</strong> - Cycle Start</li>
+                    </ul>
+                </div>
+
+                <div class="info-section">
+                    <h3>Applications</h3>
+                    <ul>
+                        <li><strong>Memory Leak Detection</strong></li>
+                        <li><strong>Network Routing Loops</strong></li>
+                        <li><strong>Deadlock Detection</strong></li>
+                        <li><strong>Duplicate Detection</strong></li>
+                    </ul>
+                </div>
+
+                <button class="btn-code" onclick="toggleCode()">Show Code</button>
+
+                <div id="codeContainer" class="code-container">
+<pre>struct Node* detectCycle(struct Node* head) {
+    struct Node* slow = head;
+    struct Node* fast = head;
+    
+    while (fast != NULL && fast-&gt;next != NULL) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next-&gt;next;
+        
+        if (slow == fast) break;
+    }
+    
+    if (fast == NULL || fast-&gt;next == NULL) 
+        return NULL;
+    
+    slow = head;
+    while (slow != fast) {
+        slow = slow-&gt;next;
+        fast = fast-&gt;next;
+    }
+    
+    return slow;
+}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let nodes = [];
+        let cycleTarget = null;
+        let slowPointer = null;
+        let fastPointer = null;
+        let detectionStatus = '';
+        let cycleStart = null;
+
+        function initializeList() {
+            nodes = [];
+            for (let i = 1; i <= 5; i++) {
+                nodes.push({ value: i, next: i < 5 ? i : null });
+            }
+            resetAlgorithm();
+            renderList();
+            updateCycleSelect();
+            updateButtons();
+        }
+
+        function updateButtons() {
+            document.getElementById('removeBtn').disabled = nodes.length <= 1;
+            document.getElementById('removeCycleBtn').disabled = cycleTarget === null;
+            document.getElementById('stepBtn').disabled = detectionStatus.includes('Detected');
+            document.getElementById('cycleSelect').disabled = nodes.length === 0;
+        }
+
+        function renderList() {
+            const container = document.getElementById('linkedList');
+            container.innerHTML = '';
+
+            nodes.forEach((node, index) => {
+                const nodeContainer = document.createElement('div');
+                nodeContainer.className = 'node-container';
+
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = 'node';
+                
+                if (slowPointer === index && fastPointer === index) {
+                    nodeDiv.classList.add('both');
+                } else if (slowPointer === index) {
+                    nodeDiv.classList.add('slow');
+                } else if (fastPointer === index) {
+                    nodeDiv.classList.add('fast');
+                }
+
+                if (cycleStart === index) {
+                    nodeDiv.classList.add('cycle-start');
+                }
+
+                nodeDiv.textContent = node.value;
+
+                if (slowPointer === index || fastPointer === index) {
+                    const label = document.createElement('div');
+                    label.className = 'pointer-label';
+                    if (slowPointer === index && fastPointer === index) {
+                        label.textContent = '🐢🐇';
+                    } else if (slowPointer === index) {
+                        label.textContent = '🐢';
+                    } else {
+                        label.textContent = '🐇';
+                    }
+                    nodeDiv.appendChild(label);
+                }
+
+                if (cycleStart === index) {
+                    const cycleLabel = document.createElement('div');
+                    cycleLabel.className = 'cycle-start-label';
+                    cycleLabel.textContent = 'Cycle Start';
+                    nodeDiv.appendChild(cycleLabel);
+                }
+
+                nodeContainer.appendChild(nodeDiv);
+
+                if (node.next !== null && node.next !== index + 1) {
+                    const arrow = document.createElement('span');
+                    arrow.className = 'cycle-arrow';
+                    arrow.textContent = '↺ to ' + (node.next + 1);
+                    nodeContainer.appendChild(arrow);
+                } else if (node.next === index + 1 && index < nodes.length - 1) {
+                    const arrow = document.createElement('span');
+                    arrow.className = 'arrow';
+                    arrow.textContent = '→';
+                    nodeContainer.appendChild(arrow);
+                } else if (node.next === null && index === nodes.length - 1) {
+                    const arrow = document.createElement('span');
+                    arrow.className = 'arrow';
+                    arrow.textContent = '→ ∅';
+                    nodeContainer.appendChild(arrow);
+                }
+
+                container.appendChild(nodeContainer);
+            });
+        }
+
+        function updateStatus(message, type) {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.textContent = message;
+            statusBox.className = 'status-box';
+            if (type) statusBox.classList.add(type);
+        }
+
+        function updateCycleSelect() {
+            const select = document.getElementById('cycleSelect');
+            select.innerHTML = '<option value="">Create Cycle to...</option>';
+            nodes.forEach((node, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = 'Node ' + node.value;
+                select.appendChild(option);
+            });
+        }
+
+        function addNode() {
+            const newNode = { value: nodes.length + 1, next: null };
+            if (nodes.length > 0) {
+                if (cycleTarget !== null) {
+                    nodes[nodes.length - 1].next = null;
+                    cycleTarget = null;
+                }
+                nodes[nodes.length - 1].next = nodes.length;
+            }
+            nodes.push(newNode);
+            resetAlgorithm();
+            renderList();
+            updateCycleSelect();
+            updateButtons();
+        }
+
+        function removeNode() {
+            if (nodes.length <= 1) return;
+            nodes.pop();
+            if (cycleTarget !== null && cycleTarget >= nodes.length) {
+                cycleTarget = null;
+            }
+            if (nodes.length > 0) {
+                nodes[nodes.length - 1].next = null;
+            }
+            resetAlgorithm();
+            renderList();
+            updateCycleSelect();
+            updateButtons();
+        }
+
+        function createCycle(targetIndex) {
+            if (targetIndex === '' || nodes.length === 0) return;
+            targetIndex = parseInt(targetIndex);
+            nodes[nodes.length - 1].next = targetIndex;
+            cycleTarget = targetIndex;
+            resetAlgorithm();
+            renderList();
+            updateButtons();
+            document.getElementById('cycleSelect').value = '';
+        }
+
+        function removeCycle() {
+            if (cycleTarget === null) return;
+            nodes[nodes.length - 1].next = null;
+            cycleTarget = null;
+            resetAlgorithm();
+            renderList();
+            updateButtons();
+        }
+
+        function resetAlgorithm() {
+            slowPointer = null;
+            fastPointer = null;
+            detectionStatus = '';
+            cycleStart = null;
+            updateStatus('Ready to Start - Click "Step Through Algorithm"', '');
+            renderList();
+            updateButtons();
+        }
+
+        function stepAlgorithm() {
+            if (nodes.length === 0) return;
+            
+            if (slowPointer === null || fastPointer === null) {
+                slowPointer = 0;
+                fastPointer = 0;
+                detectionStatus = 'running';
+                updateStatus('Running...', 'running');
+                renderList();
+                updateButtons();
+                return;
+            }
+
+            let newSlow = nodes[slowPointer].next;
+            if (newSlow === null) {
+                detectionStatus = 'No Cycle Detected';
+                updateStatus('No Cycle Detected ❌', 'error');
+                updateButtons();
+                return;
+            }
+
+            let newFast = nodes[fastPointer].next;
+            if (newFast === null) {
+                detectionStatus = 'No Cycle Detected';
+                updateStatus('No Cycle Detected ❌', 'error');
+                updateButtons();
+                return;
+            }
+            
+            newFast = nodes[newFast].next;
+            if (newFast === null) {
+                detectionStatus = 'No Cycle Detected';
+                updateStatus('No Cycle Detected ❌', 'error');
+                updateButtons();
+                return;
+            }
+
+            slowPointer = newSlow;
+            fastPointer = newFast;
+
+            if (newSlow === newFast) {
+                detectionStatus = 'Cycle Detected';
+                updateStatus('Cycle Detected ✅', 'success');
+                findCycleStart(newSlow);
+                updateButtons();
+            }
+
+            renderList();
+        }
+
+        function findCycleStart(meetingPoint) {
+            let ptr1 = 0;
+            let ptr2 = meetingPoint;
+            while (ptr1 !== ptr2) {
+                ptr1 = nodes[ptr1].next;
+                ptr2 = nodes[ptr2].next;
+                if (ptr1 === null || ptr2 === null) break;
+            }
+            cycleStart = ptr1;
+            renderList();
+        }
+
+        function toggleCode() {
+            const codeContainer = document.getElementById('codeContainer');
+            const button = document.querySelector('.btn-code');
+            if (codeContainer.classList.contains('show')) {
+                codeContainer.classList.remove('show');
+                button.textContent = 'Show Code';
+            } else {
+                codeContainer.classList.add('show');
+                button.textContent = 'Hide Code';
+            }
+        }
+
+        window.onload = function() {
+            initializeList();
+        };
+    </script>
+</body>
+</html>
